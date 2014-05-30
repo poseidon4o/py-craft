@@ -63,6 +63,7 @@ class WorldGenerator:
 
     air_to_ground = 0.45
     chance_for_mountain = 0.03
+    max_inclination = 3
 
     def __init__(self, width, height):
         self.width = width
@@ -72,6 +73,7 @@ class WorldGenerator:
     def generate(self):
         self._ground()
         self._mountains()
+        self._smooth_mountains()
         self._caves()
         return self.world
 
@@ -96,11 +98,14 @@ class WorldGenerator:
             if self.world[at][cell] == WorldObject('ground'):
                 return cell
 
-    def __range(self, a, b):
-        if a < b:
-            return range(a, b)
-        else:
-            return range(b, a)
+    def __inclination_diff(self, a, b=-1):
+        if b == -1:
+            b = a + 1
+        return (
+            abs(self.__ground_height(a) - self.__ground_height(b)),
+            (a, self.__ground_height(a)),
+            (b, self.__ground_height(b))
+        )
 
     def __set_ground_height(self, at, height):
         for height in self.world.in_height(height, self.__ground_height(at)):
@@ -112,6 +117,28 @@ class WorldGenerator:
             if random_chance(self.chance_for_mountain):
                 self._mountain_at(col)
                 last_mountain = col
+
+    def __smooth_part(self, diff):
+        change = diff[0] // 2
+        if diff[1][0] > diff[2][0]:
+            self.__set_ground_height(diff[1][0], diff[1][1] - change)
+            self.__set_ground_height(diff[2][0], diff[2][1] + change)
+        else:
+            self.__set_ground_height(diff[1][0], diff[1][1] + change)
+            self.__set_ground_height(diff[2][0], diff[2][1] - change)
+
+    def __smooth_pass(self):
+        has_unsmoothness = False
+        for width in self.world.in_width(0, self.world.width-1):
+            diff = self.__inclination_diff(width, width+1)
+            if diff[0] > self.max_inclination:
+                has_unsmoothness = True
+                self.__smooth_part(diff)
+        return has_unsmoothness
+
+    def _smooth_mountains(self):
+        while self.__smooth_pass():
+            pass
 
     def _mountain_at(self, at):
         mountain_width = 20
