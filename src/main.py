@@ -51,10 +51,7 @@ class PyCraft:
 
         for x in range(self.world.width):
             for y in range(self.world.height):
-                try:
-                    self.world[x][y].type['color'] = (self.world[x][y].type['color'])
-                except Exception as e:
-                    print(e, x, y)
+                self.world[x][y].type['color'] = (self.world[x][y].type['color'])
 
     def _clear(self):
         self.window.fill(self._clear_color)
@@ -78,7 +75,7 @@ class PyCraft:
             bind(self.offset.x // self.BLOCK_SIZE, self.world.width),
             bind(self.offset.y // self.BLOCK_SIZE, self.world.height),
         )
-        
+
         disposition = (
             bind(self.offset.x - top_left[0] * self.BLOCK_SIZE, self.world.width),
             bind(self.offset.y - top_left[1] * self.BLOCK_SIZE, self.world.height)
@@ -93,18 +90,14 @@ class PyCraft:
             w = 0   
             for x in self.world.range(top_left[0], self.blocks_in_width + top_left[0]):
 
-                try: 
-                    pygame.draw.rect(
-                        self.window,
-                        self.world[x][y].type['color'],
-                        rectangle.move(
-                            self.BLOCK_SIZE * w,
-                            self.BLOCK_SIZE * h
-                        )
+                pygame.draw.rect(
+                    self.window,
+                    self.world[x][y].type['color'],
+                    rectangle.move(
+                        self.BLOCK_SIZE * w,
+                        self.BLOCK_SIZE * h
                     )
-                except Exception as e:
-                    pass
-                    print(e, x, y)
+                )
                 w += 1
             h += 1
 
