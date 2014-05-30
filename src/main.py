@@ -33,7 +33,7 @@ class Coord:
 class PyCraft:
     WIDTH = 800
     HEIGHT = 600
-    BLOCK_SIZE = 5
+    BLOCK_SIZE = 4
 
     blocks_in_width = WIDTH // BLOCK_SIZE
     blocks_in_height = HEIGHT // BLOCK_SIZE
@@ -48,13 +48,21 @@ class PyCraft:
 
         self._clear_color = pygame.Color('white')
         self._border_color = pygame.Color('black')
+        self._update_colors()
 
+    def _update_callback(self, world):
+        self.world = world
+        self._update_colors()
+        self._clear()
+        self._draw()
+
+    def _update_colors(self):
         for x in range(self.world.width):
             for y in range(self.world.height):
-                self.world[x][y].type['color'] = (self.world[x][y].type['color'])
+                self.world[x][y].type['color'] = self.world[x][y].type['color']
 
     def _clear(self):
-        self.window.fill(self._clear_color)
+        self.window.fill(pygame.Color('white'))
                 
     def _read_input(self):
         for event in pygame.event.get():
@@ -69,7 +77,6 @@ class PyCraft:
                     K_RIGHT: Coord(self.BLOCK_SIZE, 0)
                 }[event.key].toint() * 10
 
-
     def _draw(self):
         top_left = (
             bind(self.offset.x // self.BLOCK_SIZE, self.world.width),
@@ -77,8 +84,14 @@ class PyCraft:
         )
 
         disposition = (
-            bind(self.offset.x - top_left[0] * self.BLOCK_SIZE, self.world.width),
-            bind(self.offset.y - top_left[1] * self.BLOCK_SIZE, self.world.height)
+            bind(
+                self.offset.x - top_left[0] * self.BLOCK_SIZE,
+                self.world.width
+            ),
+            bind(
+                self.offset.y - top_left[1] * self.BLOCK_SIZE,
+                self.world.height
+            )
         )
 
         w = 0
@@ -86,9 +99,11 @@ class PyCraft:
 
         rectangle = Rect(0, 0, self.BLOCK_SIZE, self.BLOCK_SIZE)
 
-        for y in self.world.range(top_left[1], self.blocks_in_height + top_left[1], 'height'):
+        for y in self.world.range(top_left[1],
+                self.blocks_in_height + top_left[1], 'height'):
             w = 0   
-            for x in self.world.range(top_left[0], self.blocks_in_width + top_left[0]):
+            for x in self.world.range(top_left[0],
+                    self.blocks_in_width + top_left[0]):
 
                 pygame.draw.rect(
                     self.window,
