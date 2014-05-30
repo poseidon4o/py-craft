@@ -1,7 +1,8 @@
 import pygame, sys, os
 from pygame.locals import *
 
-from world.world import WorldGenerator, World
+from world.world_generator import WorldGenerator
+
 
 def bind(val, top):
     if 0 <= val < top:
@@ -44,7 +45,7 @@ class PyCraft:
         pygame.display.set_caption('PyCraft')
 
         self.offset = Coord(0, 0)
-        self.world = WorldGenerator.generate_world()
+        self.world = WorldGenerator.generate_world(self._update_callback)
 
         self._clear_color = pygame.Color('white')
         self._border_color = pygame.Color('black')
