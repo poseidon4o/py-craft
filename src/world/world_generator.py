@@ -14,6 +14,10 @@ class WorldGenerator:
 
     air_to_ground = 0.45
     chance_for_mountain = 0.1
+    
+    chance_for_cave = 0.05
+    cave_length = 20
+
     max_inclination = 3
 
     def __init__(self, width, height):
@@ -27,9 +31,34 @@ class WorldGenerator:
         self._caves()
         return self.world
 
-    def _caves(self):
-        pass
+    def _hole_at(self, width, height):
+        for w in self.world.in_width(width - self.max_inclination,
+                                     width + self.max_inclination):
+            self.world[w][height] = WorldObject('air')
 
+        for h in self.world.in_height(height - self.max_inclination,
+                                      height + self.max_inclination):
+            self.world[width][h] = WorldObject('air')
+
+    def _cave_at(self, width, height):
+        for w in self.world.in_width(width, 
+                width + randint(self.cave_length, self.cave_length * 3)):
+            height = min(height, self.world.height-1)
+            height = max(0, height)
+            self._hole_at(w, height)
+            height = height + randint(-1, 1)
+
+    def _caves(self):
+        for width in self.world.in_width():
+            if random_chance(self.chance_for_cave):
+                height = self.__ground_height(width)
+                height = randint(
+                    height + self.max_inclination * 2,
+                    self.world.height
+                )
+                self._cave_at(width, height)
+                if self._update_callback is not None:
+                    self._update_callback(self.world)
     def _ground(self):
         for width in self.world.in_width():
             for height in self.world.in_height():

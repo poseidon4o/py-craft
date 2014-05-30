@@ -45,7 +45,7 @@ class PyCraft:
         pygame.display.set_caption('PyCraft')
 
         self.offset = Coord(0, 0)
-        self.world = WorldGenerator.generate_world(self._update_callback)
+        self.world = WorldGenerator.generate_world()
 
         self._clear_color = pygame.Color('white')
         self._border_color = pygame.Color('black')
