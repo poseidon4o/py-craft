@@ -76,10 +76,17 @@ class WorldGenerator:
             self.__set_ground_height(at, left - diff // 2)
             self.__set_ground_height(at, right + diff // 2)
 
-    def __smooth_pass(self):
+    def __smooth_pass(self, direction=1):
         has_unsmoothness = False
-        for width in self.world.in_width(0, self.world.width - 1):
-            diff = self.__inclination_diff(width, width + 1)
+        for_range = [
+            range(0, self.world.width - 1),
+            range(self.world.width - 1, 1, -1)
+        ][direction % 2]
+
+        step = [-1, 1][direction % 2]
+
+        for width in for_range:
+            diff = self.__inclination_diff(width, width + step)
             if diff > self.max_inclination:
                 has_unsmoothness = True
                 self.__smooth_part(diff, width)
@@ -87,7 +94,7 @@ class WorldGenerator:
 
     def _smooth_mountains(self):
         max_passes = 100
-        while self.__smooth_pass() and max_passes > 0:
+        while self.__smooth_pass(max_passes) and max_passes > 0:
             if self._update_callback != None:
                 self._update_callback(self.world)
             max_passes -= 1

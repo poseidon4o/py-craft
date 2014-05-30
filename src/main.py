@@ -34,7 +34,7 @@ class Coord:
 class PyCraft:
     WIDTH = 800
     HEIGHT = 600
-    BLOCK_SIZE = 4
+    BLOCK_SIZE = 2
 
     blocks_in_width = WIDTH // BLOCK_SIZE
     blocks_in_height = HEIGHT // BLOCK_SIZE
