@@ -2,6 +2,7 @@ import pygame, sys, os
 from pygame.locals import *
 
 from world.world_generator import WorldGenerator
+from world.world import WorldObject
 
 
 def bind(val, top):
@@ -138,5 +139,10 @@ class PyCraft:
 
 
 if __name__ == '__main__':
+    resource_path = os.path.join(
+        os.path.dirname(os.path.realpath(__file__)), '../resources')
+    WorldObject.init(resource_path)
+    # print(WorldObject.type)
+    # sys.exit(0)
     game = PyCraft()
     game.start()

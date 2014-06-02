@@ -1,0 +1,26 @@
+[
+    {
+        "name": "air",
+        "color": [50, 120, 200],
+        "health": 0,
+        "solid": 0
+    },
+    {
+        "name": "ground",
+        "color": [120, 60, 50],
+        "health": 2,
+        "solid": 1
+    },
+    {
+        "name": "sand",
+        "color": [255, 255, 0],
+        "health": 1,
+        "solid": 1
+    },
+    {
+        "name": "none",
+        "color": [0, 0, 0],
+        "health": 0,
+        "health": 0
+    }
+]

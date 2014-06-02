@@ -1,24 +1,26 @@
+from os import path
+import json
+
 class WorldObject:
-    type = {
-        'ground': {
-            'color': (120, 60, 50),
-            'id': 1
-        },
-        'air': {
-            'color': (50, 120, 200),
-            'id': 2
-        },
-        'none': {
-            'color': (255, 0, 187),
-            'id': -1
-        }
-    }
+    type = None
+
+    @classmethod
+    def init(cls, resource_path):
+        objects_file = open(path.join(resource_path, 'world_types.json'))
+        cls.type = dict()
+
+        for item in json.loads(objects_file.read()):
+            cls.type[item['name']] = item
+
+        objects_file.close()
 
     def __init__(self, object_type):
+        if WorldObject.type is None:
+            raise RuntimeError('WorldObject not init')
         self.type = WorldObject.type[object_type]
 
     def __eq__(self, other):
-        return self.type['id'] == other.type['id']
+        return self.type['name'] == other.type['name']
 
 
 class World:
