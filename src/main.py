@@ -31,6 +31,7 @@ class Coord:
         self.y = int(self.y)
         return self
 
+
 class PyCraft:
     WIDTH = 800
     HEIGHT = 600
@@ -42,10 +43,11 @@ class PyCraft:
     def __init__(self):
         pygame.init()
         self.window = pygame.display.set_mode((self.WIDTH, self.HEIGHT))
-        pygame.display.set_caption('PyCraft')
 
         self.offset = Coord(0, 0)
-        self.world = WorldGenerator.generate_world()
+        pygame.display.set_caption('PyCraft - Generating World')
+        self.world = WorldGenerator.generate_world(self._update_callback)
+        pygame.display.set_caption('PyCraft')
 
         self._clear_color = pygame.Color('white')
         self._border_color = pygame.Color('black')
@@ -53,6 +55,7 @@ class PyCraft:
 
     def _update_callback(self, world):
         self.world = world
+        self._read_input()
         self._update_colors()
         self._clear()
         self._draw()
