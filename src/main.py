@@ -34,7 +34,7 @@ class Coord:
 class PyCraft:
     WIDTH = 800
     HEIGHT = 600
-    BLOCK_SIZE = 2
+    BLOCK_SIZE = 20
 
     blocks_in_width = WIDTH // BLOCK_SIZE
     blocks_in_height = HEIGHT // BLOCK_SIZE
@@ -79,6 +79,11 @@ class PyCraft:
                 }[event.key].toint() * 10
 
     def _draw(self):
+        self.offset.x = bind(self.offset.x // self.BLOCK_SIZE,
+            self.world.width - self.blocks_in_width) * self.BLOCK_SIZE
+        self.offset.y = bind(self.offset.y // self.BLOCK_SIZE,
+            self.world.height - self.blocks_in_height) * self.BLOCK_SIZE
+
         top_left = (
             bind(self.offset.x // self.BLOCK_SIZE, self.world.width),
             bind(self.offset.y // self.BLOCK_SIZE, self.world.height),
