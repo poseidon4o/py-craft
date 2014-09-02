@@ -18,7 +18,7 @@ class WorldGenerator:
     chance_for_cave = 0.05
     cave_length = 20
 
-    max_inclination = 3
+    max_inclination = 2
 
     def __init__(self, width, height):
         self.world = World(width, height)
@@ -156,5 +156,5 @@ class WorldGenerator:
             )
 
     @staticmethod
-    def generate_world(callback=None):
-        return WorldGenerator(1000, 300).generate(callback)
+    def generate_world(callback=None, dim=(1000, 300)):
+        return WorldGenerator(*dim).generate(callback)
