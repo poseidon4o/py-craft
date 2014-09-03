@@ -8,7 +8,7 @@ class WorldObject:
     @classmethod
     def init(cls, resource_path):
         objects_file = open(path.join(resource_path, 'world_types.json'))
-        cls.type = dict()
+        cls._type = dict()
 
         for item in json.loads(objects_file.read()):
             cls._type[item['name']] = item
@@ -16,16 +16,16 @@ class WorldObject:
         objects_file.close()
 
     def __init__(self, object_type):
-        if WorldObject.type is None:
+        if WorldObject._type is None:
             raise RuntimeError('WorldObject not init')
 
-        for key in WorldObject.type[object_type].keys():
-            setattr(self, key, WorldObject.type[object_type][key])
+        for key in WorldObject._type[object_type].keys():
+            setattr(self, key, WorldObject._type[object_type][key])
 
         self._unique_id = random.random()
 
     def __eq__(self, other):
-        return self.type['name'] == other.type['name']
+        return self.name == other.name
 
 
 class World:
