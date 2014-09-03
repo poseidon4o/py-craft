@@ -4,7 +4,8 @@ from sdl2 import timer
 
 class Player:
     
-    def __init__(self, world):
+    def __init__(self, world, sprite):
+        self.sprite = sprite
         self.size = (1, 2)
         self.speed = 4
 
@@ -12,7 +13,6 @@ class Player:
         self.last_tick = timer.SDL_GetTicks()
 
         self.reposition()
-
 
     # position self at center of the world
     def reposition(self):
@@ -33,7 +33,6 @@ class Player:
         #no air jumping
         if not self.world[self.position[0]][self.position[1] + self.size[1]].solid:
             return
-
 
         self.last_tick = timer.SDL_GetTicks()
         for y in self.world.pointed_range(self.position[1], self.position[1] + self.speed * 5):
