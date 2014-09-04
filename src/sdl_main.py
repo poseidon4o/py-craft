@@ -88,7 +88,7 @@ class PyCraft():
         from_width, to_width =\
             self.offset[0], self.offset[0] + self.blocks_in_width
         
-
+        player_pos = None
         draw_rect = rect.SDL_Rect(0, 0, self.BLOCK_SIZE, self.BLOCK_SIZE)
         h = 0
         for y in self.world.in_height(from_height, to_height):
@@ -109,22 +109,23 @@ class PyCraft():
                 w += 1
             h += 1       
 
-        draw_rect.x = player_pos[0]
-        draw_rect.y = player_pos[1]
+        if player_pos:
+            draw_rect.x = player_pos[0]
+            draw_rect.y = player_pos[1]
 
-        sdl2.surface.SDL_BlitSurface(
-            self.player.sprite.surface, None,
-            self.c_surface, draw_rect
-        )
+            sdl2.surface.SDL_BlitSurface(
+                self.player.sprite.surface, None,
+                self.c_surface, draw_rect
+            )
 
 
     def focus_player(self):
         self.offset[0] = bind_in_range(
-            self.player.position[0] - self.blocks_in_width // 2,
+            self.player.position.x - self.blocks_in_width // 2,
             0, self.world.width - self.blocks_in_width)
 
         self.offset[1] = bind_in_range(
-            self.player.position[1] - self.blocks_in_width // 2,
+            self.player.position.y - self.blocks_in_width // 2,
             0, self.world.width - self.blocks_in_height)
 
     def events(self):
@@ -140,9 +141,9 @@ class PyCraft():
                 elif event.key.keysym.sym == sdl2.SDLK_SPACE:
                     self.player.jump()
                 
-        self.player.position[0] = bind_in_range(self.player.position[0],
+        self.player.position.x = bind_in_range(self.player.position.x,
             0, self.world.width)
-        self.player.position[1] = bind_in_range(self.player.position[1],
+        self.player.position.y = bind_in_range(self.player.position.y,
             0, self.world.height)
 
 
