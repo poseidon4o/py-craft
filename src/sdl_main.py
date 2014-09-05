@@ -4,7 +4,7 @@ from os import path
 import sdl2.ext
 from sdl2 import timer, surface, video, rect
 
-from .utils import bind_in_range
+from .utils import bind_in_range, Coord, point_in_rect, to_rgb
 from .world.world_generator import WorldGenerator
 from .world.world import WorldObject
 from .player import Player
@@ -13,8 +13,15 @@ class PyCraft():
     WIDTH, HEIGHT = 1200, 800
     BLOCK_SIZE = 20
 
+    DEBUG = False
+
     blocks_in_width = WIDTH // BLOCK_SIZE
     blocks_in_height = HEIGHT // BLOCK_SIZE
+
+    move_padding = (
+        WIDTH // (5 * BLOCK_SIZE),
+        HEIGHT // (5 * BLOCK_SIZE)
+    )
 
 
     def __init__(self, RESOURCE_DIR):
@@ -35,23 +42,25 @@ class PyCraft():
 
         RESOURCES = sdl2.ext.Resources(RESOURCE_DIR)
         
-        self.offset = [0, 0]
-        self.world = WorldGenerator.generate_world(None, (300, 50))
+        self.offset = Coord(0, 0) # offset in world coordinates
+        self.world = WorldGenerator.generate_world(None, (300, 100))
         
         sprite = self.sprite_factory.from_image(
             RESOURCES.get_path('player.png')
         )
         self.player = Player(self.world, sprite)
 
-        self.color_map = {}
+
+        self.dirty = True
+        self.texture_map = {}
         self.loop()
 
     def loop(self):
         for row in self.world:
             for el in row:
-                if el.name not in self.color_map:
-                    self.color_map[el.name] = self.sprite_factory.from_color(
-                        self._to_rgb(*el.color), 
+                if el.name not in self.texture_map:
+                    self.texture_map[el.name] = self.sprite_factory.from_color(
+                        to_rgb(*el.color), 
                         (self.BLOCK_SIZE, self.BLOCK_SIZE)
                     )
 
@@ -76,57 +85,109 @@ class PyCraft():
             avg_time = 0.75 * avg_time + 0.25 * (now - start)
 
             timer.SDL_Delay(1000 // 60)
+      
+    def world_to_screen(self, x, y):
+        return (
+            (x - self.offset.x) * self.BLOCK_SIZE,
+            (y - self.offset.y) * self.BLOCK_SIZE
+        )
 
-    def _to_rgb(self, r, g, b):
-        return r << 16 | g << 8 | b
+    def mark_rect(self, world_rect):
+        x1, y1 = list(map(int, self.world_to_screen(world_rect[0], world_rect[1])))
+        x2, y2 = list(map(int, self.world_to_screen(world_rect[2], world_rect[3])))
 
-    def draw(self):
-        sdl2.ext.fill(self.p_surface, 0x000000)
-        
-        from_height, to_height =\
-            self.offset[1], self.offset[1] + self.blocks_in_height
-        from_width, to_width =\
-            self.offset[0], self.offset[0] + self.blocks_in_width
-        
-        player_pos = None
+        sdl2.ext.line(self.p_surface, 0xff0000, (x1, y1, x2, y1))
+        sdl2.ext.line(self.p_surface, 0xff0000, (x2, y1, x2, y2))
+        sdl2.ext.line(self.p_surface, 0xff0000, (x1, y1, x1, y2))
+        sdl2.ext.line(self.p_surface, 0xff0000, (x1, y2, x2, y2))
+
+
+    def update_area(self, world_rect):
+        start_w = int(world_rect[0] - self.offset.x)
+        start_h = int(world_rect[1] - self.offset.y)
+
         draw_rect = rect.SDL_Rect(0, 0, self.BLOCK_SIZE, self.BLOCK_SIZE)
-        h = 0
-        for y in self.world.in_height(from_height, to_height):
-            w = 0
-            for x in self.world.in_width(from_width, to_width):
+        h = start_h
+        for y in self.world.in_height(world_rect[1], world_rect[3]):
+            w = start_w
+            for x in self.world.in_width(world_rect[0], world_rect[2]):
         
                 draw_rect.x = w * self.BLOCK_SIZE
                 draw_rect.y = h * self.BLOCK_SIZE
 
-                sdl2.surface.SDL_BlitSurface(
-                    self.color_map[self.world[x][y].name].surface, 
+                resp = sdl2.surface.SDL_BlitSurface(
+                    self.texture_map[self.world[x][y].name].surface, 
                     None, self.c_surface, draw_rect
                 )
-                
-                if [x, y] == self.player.position:
-                    player_pos = (w * self.BLOCK_SIZE, h * self.BLOCK_SIZE)
-                    
                 w += 1
-            h += 1       
+            h += 1
 
-        if player_pos:
-            draw_rect.x = player_pos[0]
-            draw_rect.y = player_pos[1]
+        if self.DEBUG:
+            self.mark_rect(world_rect)
 
-            sdl2.surface.SDL_BlitSurface(
-                self.player.sprite.surface, None,
-                self.c_surface, draw_rect
-            )
 
+    def draw(self):
+        if not self.dirty and not self.player.dirty:
+            return
+
+        if self.player.dirty and not self.dirty:
+            from_height, to_height =\
+                self.player.dirty_rect[1], self.player.dirty_rect[3]
+            from_width, to_width =\
+                self.player.dirty_rect[0], self.player.dirty_rect[2]
+
+            start_w = int(from_width - self.offset.x)
+            start_h = int(from_height - self.offset.y)
+        else:
+            self.dirty = False
+            sdl2.ext.fill(self.p_surface, 0x000000)
+            from_height, to_height =\
+                self.offset[1], self.offset[1] + self.blocks_in_height
+            from_width, to_width =\
+                self.offset[0], self.offset[0] + self.blocks_in_width
+
+            start_w, start_h = 0, 0
+
+        self.update_area((
+            from_width, from_height,
+            to_width, to_height
+        ))
+     
+        if self.player.dirty or self.dirty:
+            self.draw_player()
+
+    def draw_player(self):
+        screen_pos = list(map(int, self.world_to_screen(*self.player.position.pos)))
+
+        draw_rect = rect.SDL_Rect(
+            screen_pos[0], screen_pos[1],
+            self.BLOCK_SIZE, self.BLOCK_SIZE
+        )
+        
+        sdl2.surface.SDL_BlitSurface(
+            self.player.sprite.surface, None,
+            self.c_surface, draw_rect
+        )
 
     def focus_player(self):
-        self.offset[0] = bind_in_range(
-            self.player.position.x - self.blocks_in_width // 2,
-            0, self.world.width - self.blocks_in_width)
+        no_move_rect = (
+            self.offset.x + self.move_padding[0],
+            self.offset.y + self.move_padding[1],
+            self.offset.x + self.blocks_in_width - self.move_padding[0],
+            self.offset.y + self.blocks_in_height - self.move_padding[1]
+        )
 
-        self.offset[1] = bind_in_range(
-            self.player.position.y - self.blocks_in_width // 2,
-            0, self.world.width - self.blocks_in_height)
+        if not point_in_rect(self.player.position.pos, no_move_rect):
+            self.dirty = True
+
+            self.offset[0] = bind_in_range(
+                self.player.position.x - self.blocks_in_width // 2,
+                0, self.world.width - self.blocks_in_width)
+
+            self.offset[1] = bind_in_range(
+                self.player.position.y - self.blocks_in_width // 2,
+                0, self.world.width - self.blocks_in_height)
+
 
     def events(self):
         for event in sdl2.ext.get_events():
@@ -140,11 +201,6 @@ class PyCraft():
                     self.player.move(1)
                 elif event.key.keysym.sym == sdl2.SDLK_SPACE:
                     self.player.jump()
-                
-        self.player.position.x = bind_in_range(self.player.position.x,
-            0, self.world.width)
-        self.player.position.y = bind_in_range(self.player.position.y,
-            0, self.world.height)
 
 
 
