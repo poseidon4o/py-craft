@@ -55,6 +55,12 @@ class World:
 
         return self.pointed_range(low, high, dimention)
 
+    def build(self, x, y):
+        self._world[x][y] = WorldObject('ground')
+
+    def dig(self, x, y):
+        self._world[x][y] = WorldObject('air')
+
     def pointed_range(self, low, high, dimention='width'):
         indecies = range(
             ceil_abs(max(min(low, high), 0)), 
