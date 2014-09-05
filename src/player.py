@@ -1,6 +1,6 @@
 from .world.world import World
 from sdl2 import timer
-from .utils import Coord, signof, ceil_abs
+from .utils import Coord, signof, ceil_abs, point_in_rect
 
 class Player:
     
@@ -12,6 +12,7 @@ class Player:
 
         self.sprite = sprite
         self.size = Coord(1, 2)
+        self.range = Coord(2, 2)
         self.speed = 2
         self.velocity = Coord(0, self.speed)
 
@@ -25,7 +26,32 @@ class Player:
         self.position.pos = [self.world.width / 2, 10]
         self.tick()
 
+    def in_range(self, x, y):
+        return point_in_rect((x, y), 
+            (
+                self.position.x - self.range.x,
+                self.position.y - self.range.y,
+                self.position.x + self.range.x,
+                self.position.y + self.range.y
+            )
+        )
+
+    def action(self, x, y):
+        x, y = int(x), int(y)
+        if not self.in_range(x, y):
+            return
+
+        if self.world[x][y].solid:
+            self.world.dig(x, y)
+        else:
+            self.world.build(x, y)
+
     def tick(self):
+        now = timer.SDL_GetTicks()
+        if now - self.last_tick <= 33:
+            return
+        self.last_tick = now
+
         prev_pos = Coord(*self.position.pos)
 
         if not self.world[self.position.x][self.position.y + self.size.y].solid:
@@ -54,6 +80,10 @@ class Player:
         for y in self.world.pointed_range(self.position.y + self.size.y * (y_direction == 1), self.position.y + self.size.y * (y_direction == 1) + self.velocity.y):
             if not self.world[self.position.x][y].solid:
                 self.position.y += 1 * y_direction
+            else:
+                if self.velocity.y < 0:
+                    self.velocity.y = 0
+                break
 
         if prev_pos != self.position:
             self.dirty = True

@@ -92,6 +92,12 @@ class PyCraft():
             (y - self.offset.y) * self.BLOCK_SIZE
         )
 
+    def screen_to_world(self, x, y):
+        return (
+            x / self.BLOCK_SIZE + self.offset.x,
+            y / self.BLOCK_SIZE + self.offset.y
+        )
+
     def mark_rect(self, world_rect):
         x1, y1 = list(map(int, self.world_to_screen(world_rect[0], world_rect[1])))
         x2, y2 = list(map(int, self.world_to_screen(world_rect[2], world_rect[3])))
@@ -127,6 +133,7 @@ class PyCraft():
 
 
     def draw(self):
+        self.dirty = True
         if not self.dirty and not self.player.dirty:
             return
 
@@ -139,7 +146,6 @@ class PyCraft():
             start_w = int(from_width - self.offset.x)
             start_h = int(from_height - self.offset.y)
         else:
-            self.dirty = False
             sdl2.ext.fill(self.p_surface, 0x000000)
             from_height, to_height =\
                 self.offset[1], self.offset[1] + self.blocks_in_height
@@ -155,6 +161,8 @@ class PyCraft():
      
         if self.player.dirty or self.dirty:
             self.draw_player()
+
+        self.dirty = False
 
     def draw_player(self):
         screen_pos = list(map(int, self.world_to_screen(*self.player.position.pos)))
@@ -188,19 +196,22 @@ class PyCraft():
                 self.player.position.y - self.blocks_in_width // 2,
                 0, self.world.width - self.blocks_in_height)
 
-
     def events(self):
         for event in sdl2.ext.get_events():
             if event.type == sdl2.SDL_QUIT or event.type == sdl2.SDL_KEYDOWN\
                 and event.key.keysym.sym == sdl2.SDLK_ESCAPE:
                 return True
-            if event.type == sdl2.SDL_KEYDOWN:
-                if event.key.keysym.sym == sdl2.SDLK_LEFT:
+            elif event.type == sdl2.SDL_KEYDOWN:
+                if event.key.keysym.sym in (sdl2.SDLK_LEFT, sdl2.SDLK_a):
                     self.player.move(-1)
-                elif event.key.keysym.sym == sdl2.SDLK_RIGHT:
+                elif event.key.keysym.sym in (sdl2.SDLK_RIGHT, sdl2.SDLK_d):
                     self.player.move(1)
-                elif event.key.keysym.sym == sdl2.SDLK_SPACE:
+                elif event.key.keysym.sym in (sdl2.SDLK_SPACE, sdl2.SDLK_w):
                     self.player.jump()
+            elif event.type == sdl2.SDL_MOUSEBUTTONDOWN:
+                x, y = self.screen_to_world(event.button.x, event.button.y)
+                self.player.action(x, y)
+
 
 
 
