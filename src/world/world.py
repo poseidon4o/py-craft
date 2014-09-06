@@ -23,6 +23,8 @@ class WorldObject:
         for key in WorldObject._type[object_type].keys():
             setattr(self, key, WorldObject._type[object_type][key])
 
+        self.dirty = True
+        self.pickable = False
         self._unique_id = random.random()
 
     def __eq__(self, other):
@@ -59,7 +61,25 @@ class World:
         self._world[x][y] = WorldObject('ground')
 
     def dig(self, x, y):
-        self._world[x][y] = WorldObject('air')
+        if not self._world[x][y].solid:
+            return
+
+        self._world[x][y].health -= 1
+
+        if self._world[x][y].health == 0:
+            drop = self._world[x][y].name
+            self._world[x][y] = WorldObject('air')
+            self._world[x][y].pickable = True
+            self._world[x][y].drop = drop
+
+    def pick(self, x, y):
+        if not self._world[x][y].pickable:
+            return None
+
+        name = self._world[x][y].drop
+        self._world[x][y].pickable = False
+        self._world[x][y].drop = None
+        return name
 
     def pointed_range(self, low, high, dimention='width'):
         indecies = range(

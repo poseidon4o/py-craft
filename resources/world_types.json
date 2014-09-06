@@ -21,6 +21,6 @@
         "name": "none",
         "color": [0, 0, 0],
         "health": 0,
-        "health": 0
+        "solid": 0
     }
 ]

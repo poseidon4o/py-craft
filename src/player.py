@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from .world.world import World
 from sdl2 import timer
 from .utils import Coord, signof, ceil_abs, point_in_rect
@@ -5,6 +7,8 @@ from .utils import Coord, signof, ceil_abs, point_in_rect
 class Player:
     
     def __init__(self, world, sprite):
+        self.inventory = defaultdict(int)
+
         self.position = Coord()
 
         self.dirty = True
@@ -26,15 +30,26 @@ class Player:
         self.position.pos = [self.world.width / 2, 10]
         self.tick()
 
+    def under_me(self, x, y):
+        return point_in_rect(
+            (x, y), (
+                self.position.x,
+                self.position.y,
+                self.position.x + self.size.x - 1,
+                self.position.y + self.size.y - 1
+            )
+        )
+
     def in_range(self, x, y):
-        return point_in_rect((x, y), 
+        return point_in_rect(
+            (x, y), 
             (
                 self.position.x - self.range.x,
                 self.position.y - self.range.y,
                 self.position.x + self.range.x,
                 self.position.y + self.range.y
             )
-        )
+        ) and not self.under_me(x, y)
 
     def action(self, x, y):
         x, y = int(x), int(y)
@@ -44,9 +59,24 @@ class Player:
         if self.world[x][y].solid:
             self.world.dig(x, y)
         else:
-            self.world.build(x, y)
+            if self.inventory['ground'] > 0:
+                self.inventory['ground'] -= 1
+                self.world.build(x, y)
+
+        self.dirty = True
+        self.world[x][y].dirty = True
+
+    def pick(self):
+        for x in self.world.in_width(self.position.x, self.position.x + self.size.x):
+            for y in self.world.in_height(self.position.y, self.position.y + self.size.y):
+                pick = self.world.pick(x, y)
+                self.world[x][y].dirty = True
+                if pick:
+                    self.inventory[pick] += 1
 
     def tick(self):
+        self.pick()
+
         now = timer.SDL_GetTicks()
         if now - self.last_tick <= 33:
             return
@@ -72,6 +102,7 @@ class Player:
                 step = x_direction if abs(self.velocity.x) >= 1 else self.velocity.x
                 self.position.x += step
                 self.velocity.x -= step
+                self.pick()
             else:
                 self.velocity.x = 0
                 break
@@ -80,6 +111,7 @@ class Player:
         for y in self.world.pointed_range(self.position.y + self.size.y * (y_direction == 1), self.position.y + self.size.y * (y_direction == 1) + self.velocity.y):
             if not self.world[self.position.x][y].solid:
                 self.position.y += 1 * y_direction
+                self.pick()
             else:
                 if self.velocity.y < 0:
                     self.velocity.y = 0
@@ -87,12 +119,9 @@ class Player:
 
         if prev_pos != self.position:
             self.dirty = True
-            self.dirty_rect = (
-                min(prev_pos.x, self.position.x),
-                min(prev_pos.y, self.position.y),
-                max(prev_pos.x, self.position.x) + self.size.x,
-                max(prev_pos.y, self.position.y) + self.size.y
-            )
+            for x in self.world.in_width(min(prev_pos.x, self.position.x), max(prev_pos.x, self.position.x) + self.size.x):
+                for y in self.world.in_height(min(prev_pos.y, self.position.y), max(prev_pos.y, self.position.y) + self.size.y):
+                    self.world[x][y].dirty = True
         else:
             self.dirty = False
 

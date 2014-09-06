@@ -101,63 +101,56 @@ class PyCraft():
     def mark_rect(self, world_rect):
         x1, y1 = list(map(int, self.world_to_screen(world_rect[0], world_rect[1])))
         x2, y2 = list(map(int, self.world_to_screen(world_rect[2], world_rect[3])))
-
+        x2, y2 = x2 - 1, y2 - 1
         sdl2.ext.line(self.p_surface, 0xff0000, (x1, y1, x2, y1))
         sdl2.ext.line(self.p_surface, 0xff0000, (x2, y1, x2, y2))
         sdl2.ext.line(self.p_surface, 0xff0000, (x1, y1, x1, y2))
         sdl2.ext.line(self.p_surface, 0xff0000, (x1, y2, x2, y2))
 
 
-    def update_area(self, world_rect):
-        start_w = int(world_rect[0] - self.offset.x)
-        start_h = int(world_rect[1] - self.offset.y)
+    def update_screen(self):
 
-        draw_rect = rect.SDL_Rect(0, 0, self.BLOCK_SIZE, self.BLOCK_SIZE)
-        h = start_h
-        for y in self.world.in_height(world_rect[1], world_rect[3]):
-            w = start_w
-            for x in self.world.in_width(world_rect[0], world_rect[2]):
-        
+        draw_rect = rect.SDL_Rect(0, 0, 0, 0)
+        h = 0
+        for y in self.world.in_height(self.offset.y, self.offset.y + self.blocks_in_height):
+            w = 0
+            for x in self.world.in_width(self.offset.x, self.offset.x + self.blocks_in_width):
+                if not self.world[x][y].dirty and not self.dirty:
+                    w += 1
+                    continue
+
                 draw_rect.x = w * self.BLOCK_SIZE
                 draw_rect.y = h * self.BLOCK_SIZE
 
-                resp = sdl2.surface.SDL_BlitSurface(
+                sdl2.surface.SDL_BlitSurface(
                     self.texture_map[self.world[x][y].name].surface, 
                     None, self.c_surface, draw_rect
                 )
+        
+                if self.world[x][y].pickable:
+                    draw_rect.x += self.BLOCK_SIZE // 5
+                    draw_rect.y += self.BLOCK_SIZE // 5
+
+                    sdl2.surface.SDL_BlitSurface(
+                        self.texture_map[self.world[x][y].drop].surface, 
+                        rect.SDL_Rect(0, 0, 10, 10), self.c_surface, draw_rect
+                    )
+
+                if self.world[x][y].dirty and self.DEBUG:
+                    self.mark_rect((x, y, x + 1, y + 1))
+
+                self.world[x][y].dirty = False
+
                 w += 1
             h += 1
 
-        if self.DEBUG:
-            self.mark_rect(world_rect)
 
 
     def draw(self):
-        self.dirty = True
         if not self.dirty and not self.player.dirty:
             return
 
-        if self.player.dirty and not self.dirty:
-            from_height, to_height =\
-                self.player.dirty_rect[1], self.player.dirty_rect[3]
-            from_width, to_width =\
-                self.player.dirty_rect[0], self.player.dirty_rect[2]
-
-            start_w = int(from_width - self.offset.x)
-            start_h = int(from_height - self.offset.y)
-        else:
-            sdl2.ext.fill(self.p_surface, 0x000000)
-            from_height, to_height =\
-                self.offset[1], self.offset[1] + self.blocks_in_height
-            from_width, to_width =\
-                self.offset[0], self.offset[0] + self.blocks_in_width
-
-            start_w, start_h = 0, 0
-
-        self.update_area((
-            from_width, from_height,
-            to_width, to_height
-        ))
+        self.update_screen()
      
         if self.player.dirty or self.dirty:
             self.draw_player()
