@@ -139,8 +139,6 @@ class Player:
                                               max(prev_pos.y, self.position.y)
                                               + self.size.y):
                     self.world[x][y].dirty = True
-        else:
-            self.dirty = False
 
     def jump(self):
         # no air jumping

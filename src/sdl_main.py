@@ -11,7 +11,7 @@ from .player import Player
 
 
 class PyCraft():
-    WIDTH, HEIGHT = 1200, 800
+    WIDTH, HEIGHT = 1300, 700
     BLOCK_SIZE = 20
 
     DEBUG = False
@@ -39,13 +39,13 @@ class PyCraft():
         self.sprite_renderer = self.sprite_factory\
                                    .create_sprite_render_system(self.window)
 
-        RESOURCES = sdl2.ext.Resources(RESOURCE_DIR)
+        self.RESOURCES = sdl2.ext.Resources(RESOURCE_DIR)
 
         self.offset = Coord(0, 0)  # offset in world coordinates
         self.world = WorldGenerator.generate_world(None, (300, 100))
 
         sprite = self.sprite_factory.from_image(
-            RESOURCES.get_path('player.png')
+            self.RESOURCES.get_path('player.png')
         )
         self.player = Player(self.world, sprite)
 
@@ -57,10 +57,15 @@ class PyCraft():
         for row in self.world:
             for el in row:
                 if el.name not in self.texture_map:
-                    self.texture_map[el.name] = self.sprite_factory.from_color(
-                        to_rgb(*el.color),
-                        (self.BLOCK_SIZE, self.BLOCK_SIZE)
-                    )
+                    if 'sprite' in el.__dict__:
+                        self.texture_map[el.name] = self.sprite_factory.from_image(
+                            self.RESOURCES.get_path(el.sprite)
+                        )
+                    else:
+                        self.texture_map[el.name] = self.sprite_factory.from_color(
+                            to_rgb(*el.color),
+                            (self.BLOCK_SIZE, self.BLOCK_SIZE)
+                        )
 
         last_tick = timer.SDL_GetTicks()
         avg_time = 0
@@ -159,6 +164,7 @@ class PyCraft():
         self.dirty = False
 
     def draw_player(self):
+        self.player.dirty = False
         screen_pos = list(
             map(int, self.world_to_screen(*self.player.position.pos))
         )
@@ -189,7 +195,7 @@ class PyCraft():
                 0, self.world.width - self.blocks_in_width)
 
             self.offset[1] = bind_in_range(
-                self.player.position.y - self.blocks_in_width // 2,
+                self.player.position.y - self.blocks_in_height // 2,
                 0, self.world.width - self.blocks_in_height)
 
     def events(self):
