@@ -59,6 +59,9 @@ class World:
 
         return self.pointed_range(low, high, dimention)
 
+    def valid(self, x, y):
+        return x >=0 and x < self.width and y >= 0 and y < self.height
+
     def build(self, x, y):
         self._world[x][y] = WorldObject('ground')
 

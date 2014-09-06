@@ -14,7 +14,7 @@ class PyCraft():
     WIDTH, HEIGHT = 1300, 700
     BLOCK_SIZE = 20
 
-    DEBUG = False
+    DEBUG = True
 
     blocks_in_width = WIDTH // BLOCK_SIZE
     blocks_in_height = HEIGHT // BLOCK_SIZE
@@ -26,6 +26,7 @@ class PyCraft():
 
     def __init__(self, RESOURCE_DIR):
         WorldObject.init(RESOURCE_DIR)
+        self.RESOURCES = sdl2.ext.Resources(RESOURCE_DIR)
         sdl2.ext.init()
 
         self.window = sdl2.ext.Window("Py-craft",
@@ -35,11 +36,12 @@ class PyCraft():
         self.p_surface = self.window.get_surface()
         self.c_surface = video.SDL_GetWindowSurface(self.window.window)
 
+        self.font_manager = sdl2.ext.FontManager(
+            self.RESOURCES.get_path('helvetica.ttf')
+        )
         self.sprite_factory = sdl2.ext.SpriteFactory(sdl2.ext.SOFTWARE)
         self.sprite_renderer = self.sprite_factory\
                                    .create_sprite_render_system(self.window)
-
-        self.RESOURCES = sdl2.ext.Resources(RESOURCE_DIR)
 
         self.offset = Coord(0, 0)  # offset in world coordinates
         self.world = WorldGenerator.generate_world(None, (300, 100))
@@ -141,7 +143,11 @@ class PyCraft():
 
                     sdl2.surface.SDL_BlitSurface(
                         self.texture_map[self.world[x][y].drop].surface,
-                        rect.SDL_Rect(0, 0, 10, 10), self.c_surface, draw_rect
+                        rect.SDL_Rect(
+                            0, 0,
+                            self.BLOCK_SIZE // 2, self.BLOCK_SIZE // 2
+                        ),
+                        self.c_surface, draw_rect
                     )
 
                 if self.world[x][y].dirty and self.DEBUG:
@@ -176,6 +182,21 @@ class PyCraft():
 
         sdl2.surface.SDL_BlitSurface(
             self.player.sprite.surface, None,
+            self.c_surface, draw_rect
+        )
+
+        draw_rect.x = draw_rect.y = 0
+
+        inventory_texture = self.sprite_factory.from_text(
+            self.player.inventory_string,
+            fontmanager=self.font_manager
+        )
+
+        for x in self.world.in_width(self.offset.x, self.offset.x + inventory_texture.size[0] // self.BLOCK_SIZE + 1):
+            self.world[x][self.offset.y].dirty = True
+
+        sdl2.surface.SDL_BlitSurface(
+            inventory_texture.surface, None,
             self.c_surface, draw_rect
         )
 

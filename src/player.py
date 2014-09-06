@@ -8,7 +8,9 @@ from .utils import Coord, signof, ceil_abs, point_in_rect
 class Player:
 
     def __init__(self, world, sprite):
-        self.inventory = defaultdict(int)
+        self.inventory = {
+            'ground': 0
+        }
 
         self.position = Coord()
 
@@ -18,13 +20,27 @@ class Player:
         self.sprite = sprite
         self.size = Coord(1, 2)
         self.range = Coord(2, 2)
-        self.speed = 2
+
+        self.auto_jump = False
+        self.speed = 1
         self.velocity = Coord(0, self.speed)
 
         self.world = world
         self.last_tick = timer.SDL_GetTicks()
 
         self.reposition()
+        self.inventory_string = ''
+        self.update_inventory_string()
+
+    def update_inventory_string(self):
+        new_str = ''.join(
+            [str(key) + ':' + str(value) + ' '
+             for key, value in self.inventory.items()]
+        )
+        
+        if new_str != self.inventory_string:
+            self.inventory_string = new_str
+            self.dirty = True
 
     # position self at center of the world
     def reposition(self):
@@ -57,6 +73,7 @@ class Player:
         if not self.in_range(x, y):
             return
 
+
         if self.world[x][y].solid:
             self.world.dig(x, y)
         else:
@@ -64,6 +81,7 @@ class Player:
                 self.inventory['ground'] -= 1
                 self.world.build(x, y)
 
+        self.update_inventory_string()
         self.dirty = True
         self.world[x][y].dirty = True
 
@@ -76,6 +94,7 @@ class Player:
                 self.world[x][y].dirty = True
                 if pick:
                     self.inventory[pick] += 1
+                    self.update_inventory_string()
 
     def tick(self):
         self.pick()
@@ -87,10 +106,12 @@ class Player:
 
         prev_pos = Coord(*self.position.pos)
 
-        if not self.world[self.position.x][self.position.y + self.size.y]\
+        if self.world.valid(self.position.x, self.position.y + self.size.y)\
+            and not self.world[self.position.x][self.position.y + self.size.y]\
                 .solid:
             self.velocity.y += 1
-        elif self.world[self.position.x][self.position.y - 1].solid and\
+        elif self.world.valid(self.position.x, self.position.y - 1) and\
+            self.world[self.position.x][self.position.y - 1].solid and\
                 self.velocity.y < 0:
             self.velocity.y = 0
         elif self.velocity.y > 0:
@@ -115,6 +136,8 @@ class Player:
                 self.pick()
             else:
                 self.velocity.x = 0
+                if self.auto_jump:
+                    self.jump()
                 break
 
         y_direction = signof(self.velocity.y)
@@ -146,7 +169,7 @@ class Player:
                 .solid:
             return
 
-        self.velocity.y -= self.speed * 2
+        self.velocity.y -= self.speed * 4
 
     def move(self, direction):
         self.velocity.x += direction * self.speed
