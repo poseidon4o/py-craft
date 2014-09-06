@@ -1,4 +1,6 @@
-import pygame, sys, os
+import pygame
+import sys
+import os
 from pygame.locals import *
 
 from world.world_generator import WorldGenerator
@@ -9,10 +11,11 @@ def bind(val, top):
     if 0 <= val < top:
         return val
 
-    return 0 if val < 0 else top-1
+    return 0 if val < 0 else top - 1
 
 
 class Coord:
+
     def __init__(self, x, y):
         self.x = x
         self.y = y
@@ -68,13 +71,15 @@ class PyCraft:
 
     def _clear(self):
         self.window.fill(pygame.Color('white'))
-                
+
     def _read_input(self):
         for event in pygame.event.get():
-            if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
+            if event.type == QUIT or\
+                    (event.type == KEYDOWN and event.key == K_ESCAPE):
                 pygame.quit()
                 sys.exit()
-            if event.type == KEYDOWN and event.key in (K_UP, K_DOWN, K_LEFT, K_RIGHT):
+            if event.type == KEYDOWN and\
+                    event.key in (K_UP, K_DOWN, K_LEFT, K_RIGHT):
                 self.offset += {
                     K_UP: Coord(0, -self.BLOCK_SIZE),
                     K_DOWN: Coord(0, self.BLOCK_SIZE),
@@ -83,10 +88,14 @@ class PyCraft:
                 }[event.key].toint() * 10
 
     def _draw(self):
-        self.offset.x = bind(self.offset.x // self.BLOCK_SIZE,
-            self.world.width - self.blocks_in_width) * self.BLOCK_SIZE
-        self.offset.y = bind(self.offset.y // self.BLOCK_SIZE,
-            self.world.height - self.blocks_in_height) * self.BLOCK_SIZE
+        self.offset.x = bind(
+            self.offset.x // self.BLOCK_SIZE,
+            self.world.width - self.blocks_in_width
+        ) * self.BLOCK_SIZE
+        self.offset.y = bind(
+            self.offset.y // self.BLOCK_SIZE,
+            self.world.height - self.blocks_in_height
+        ) * self.BLOCK_SIZE
 
         top_left = (
             bind(self.offset.x // self.BLOCK_SIZE, self.world.width),
@@ -110,10 +119,11 @@ class PyCraft:
         rectangle = Rect(0, 0, self.BLOCK_SIZE, self.BLOCK_SIZE)
 
         for y in self.world.range(top_left[1],
-                self.blocks_in_height + top_left[1], 'height'):
-            w = 0   
+                                  self.blocks_in_height +
+                                  top_left[1], 'height'):
+            w = 0
             for x in self.world.range(top_left[0],
-                    self.blocks_in_width + top_left[0]):
+                                      self.blocks_in_width + top_left[0]):
 
                 pygame.draw.rect(
                     self.window,

@@ -14,7 +14,7 @@ class WorldGenerator:
 
     air_to_ground = 0.45
     chance_for_mountain = 0.1
-    
+
     chance_for_cave = 0.05
     cave_length = 20
 
@@ -41,9 +41,10 @@ class WorldGenerator:
             self.world[width][h] = WorldObject('air')
 
     def _cave_at(self, width, height):
-        for w in self.world.in_width(width, 
+        for w in self.world.in_width(
+                width,
                 width + randint(self.cave_length, self.cave_length * 3)):
-            height = min(height, self.world.height-1)
+            height = min(height, self.world.height - 1)
             height = max(0, height)
             self._hole_at(w, height)
             height = height + randint(-1, 1)
@@ -59,6 +60,7 @@ class WorldGenerator:
                 self._cave_at(width, height)
                 if self._update_callback is not None:
                     self._update_callback(self.world)
+
     def _ground(self):
         for width in self.world.in_width():
             for height in self.world.in_height():
@@ -124,21 +126,21 @@ class WorldGenerator:
     def _smooth_mountains(self):
         max_passes = 100
         while self.__smooth_pass(max_passes) and max_passes > 0:
-            if self._update_callback != None:
+            if self._update_callback is not None:
                 self._update_callback(self.world)
             max_passes -= 1
 
     def _mountain_at(self, at):
         mountain_width = 20
-        up_slope = [c for c in range(at - mountain_width // 2, at) 
+        up_slope = [c for c in range(at - mountain_width // 2, at)
                     if 0 < c < self.world.width]
-        down_slope = [c for c in range(at, at + mountain_width // 2) 
+        down_slope = [c for c in range(at, at + mountain_width // 2)
                       if 0 < c < self.world.width]
 
         for col in up_slope:
             prev_height = self.__ground_height(col - 1)
             self.__set_ground_height(
-                col, 
+                col,
                 prev_height - randint(
                     -self.max_inclination // 2,
                     self.max_inclination

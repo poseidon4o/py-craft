@@ -3,6 +3,7 @@ import json
 import random
 from ..utils import ilist, ceil_abs
 
+
 class WorldObject:
     type = None
 
@@ -35,7 +36,8 @@ class World:
 
     def __init__(self, width, height):
         self._world = ilist([
-            ilist([WorldObject('none') for _ in range(height)]) for __ in range(width)
+            ilist([WorldObject('none') for _ in range(height)])
+            for __ in range(width)
         ])
         self.width = len(self._world)
         self.height = len(self._world[0])
@@ -83,7 +85,7 @@ class World:
 
     def pointed_range(self, low, high, dimention='width'):
         indecies = range(
-            ceil_abs(max(min(low, high), 0)), 
+            ceil_abs(max(min(low, high), 0)),
             ceil_abs(min(max(low, high), getattr(self, dimention)))
         )
         if low >= high:

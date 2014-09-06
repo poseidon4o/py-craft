@@ -4,8 +4,9 @@ from .world.world import World
 from sdl2 import timer
 from .utils import Coord, signof, ceil_abs, point_in_rect
 
+
 class Player:
-    
+
     def __init__(self, world, sprite):
         self.inventory = defaultdict(int)
 
@@ -42,7 +43,7 @@ class Player:
 
     def in_range(self, x, y):
         return point_in_rect(
-            (x, y), 
+            (x, y),
             (
                 self.position.x - self.range.x,
                 self.position.y - self.range.y,
@@ -67,8 +68,10 @@ class Player:
         self.world[x][y].dirty = True
 
     def pick(self):
-        for x in self.world.in_width(self.position.x, self.position.x + self.size.x):
-            for y in self.world.in_height(self.position.y, self.position.y + self.size.y):
+        for x in self.world.in_width(self.position.x,
+                                     self.position.x + self.size.x):
+            for y in self.world.in_height(self.position.y,
+                                          self.position.y + self.size.y):
                 pick = self.world.pick(x, y)
                 self.world[x][y].dirty = True
                 if pick:
@@ -84,22 +87,29 @@ class Player:
 
         prev_pos = Coord(*self.position.pos)
 
-        if not self.world[self.position.x][self.position.y + self.size.y].solid:
+        if not self.world[self.position.x][self.position.y + self.size.y]\
+                .solid:
             self.velocity.y += 1
-        elif self.world[self.position.x][self.position.y - 1].solid and self.velocity.y < 0:
+        elif self.world[self.position.x][self.position.y - 1].solid and\
+                self.velocity.y < 0:
             self.velocity.y = 0
         elif self.velocity.y > 0:
             self.velocity.y = 0
 
         x_direction = signof(self.velocity.x)
 
-        for x in self.world.pointed_range(self.position.x + self.size.x * (x_direction == 1), self.position.x + ceil_abs(self.velocity.x) + self.size.x * (x_direction == 1)):
+        for x in self.world.pointed_range(
+                self.position.x + self.size.x * (x_direction == 1),
+                self.position.x + ceil_abs(self.velocity.x)
+                + self.size.x * (x_direction == 1)):
             solid = False
-            for y in self.world.in_height(self.position.y, self.position.y + self.size.y):
+            for y in self.world.in_height(self.position.y,
+                                          self.position.y + self.size.y):
                 solid = self.world[x][y].solid or solid
 
             if not solid:
-                step = x_direction if abs(self.velocity.x) >= 1 else self.velocity.x
+                step = x_direction if abs(self.velocity.x) >= 1\
+                    else self.velocity.x
                 self.position.x += step
                 self.velocity.x -= step
                 self.pick()
@@ -108,7 +118,10 @@ class Player:
                 break
 
         y_direction = signof(self.velocity.y)
-        for y in self.world.pointed_range(self.position.y + self.size.y * (y_direction == 1), self.position.y + self.size.y * (y_direction == 1) + self.velocity.y):
+        for y in self.world.pointed_range(
+                self.position.y + self.size.y * (y_direction == 1),
+                self.position.y + self.size.y * (y_direction == 1)
+                + self.velocity.y):
             if not self.world[self.position.x][y].solid:
                 self.position.y += 1 * y_direction
                 self.pick()
@@ -119,15 +132,20 @@ class Player:
 
         if prev_pos != self.position:
             self.dirty = True
-            for x in self.world.in_width(min(prev_pos.x, self.position.x), max(prev_pos.x, self.position.x) + self.size.x):
-                for y in self.world.in_height(min(prev_pos.y, self.position.y), max(prev_pos.y, self.position.y) + self.size.y):
+            for x in self.world.in_width(min(prev_pos.x, self.position.x),
+                                         max(prev_pos.x, self.position.x)
+                                         + self.size.x):
+                for y in self.world.in_height(min(prev_pos.y, self.position.y),
+                                              max(prev_pos.y, self.position.y)
+                                              + self.size.y):
                     self.world[x][y].dirty = True
         else:
             self.dirty = False
 
     def jump(self):
-        #no air jumping
-        if not self.world[self.position[0]][self.position[1] + self.size[1]].solid:
+        # no air jumping
+        if not self.world[self.position[0]][self.position[1] + self.size[1]]\
+                .solid:
             return
 
         self.velocity.y -= self.speed * 2

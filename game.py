@@ -7,4 +7,3 @@ RESOURCE_DIR = path.join(ROOT_DIR, 'resources')
 
 from src.sdl_main import PyCraft
 game = PyCraft(RESOURCE_DIR)
-
