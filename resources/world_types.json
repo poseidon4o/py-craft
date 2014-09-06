@@ -9,7 +9,8 @@
         "name": "ground",
         "color": [120, 60, 50],
         "health": 2,
-        "solid": 1
+        "solid": 1,
+        "sprite": "ground.png"
     },
     {
         "name": "sand",
