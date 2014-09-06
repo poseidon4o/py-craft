@@ -10,7 +10,13 @@
         "color": [120, 60, 50],
         "health": 2,
         "solid": 1,
-        "sprite": "ground.png"
+        "image": "ground.png"
+    },
+    {
+        "name": "indestructible",
+        "color": [30, 10, 10],
+        "health": 1000000,
+        "solid": 1
     },
     {
         "name": "sand",

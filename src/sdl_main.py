@@ -14,7 +14,7 @@ class PyCraft():
     WIDTH, HEIGHT = 1300, 700
     BLOCK_SIZE = 20
 
-    DEBUG = True
+    DEBUG = False
 
     blocks_in_width = WIDTH // BLOCK_SIZE
     blocks_in_height = HEIGHT // BLOCK_SIZE
@@ -44,30 +44,36 @@ class PyCraft():
                                    .create_sprite_render_system(self.window)
 
         self.offset = Coord(0, 0)  # offset in world coordinates
-        self.world = WorldGenerator.generate_world(None, (300, 100))
+        self.world = WorldGenerator.generate_world(None, (100, 100))
 
+        self.dirty = True
+        self.texture_map = {}
+        
         sprite = self.sprite_factory.from_image(
             self.RESOURCES.get_path('player.png')
         )
         self.player = Player(self.world, sprite)
 
-        self.dirty = True
-        self.texture_map = {}
+        self.init()
         self.loop()
 
-    def loop(self):
+    def init(self):
+
         for row in self.world:
             for el in row:
                 if el.name not in self.texture_map:
-                    if 'sprite' in el.__dict__:
+                    if 'image' in el.__dict__:
                         self.texture_map[el.name] = self.sprite_factory.from_image(
-                            self.RESOURCES.get_path(el.sprite)
+                            self.RESOURCES.get_path(el.image)
                         )
                     else:
                         self.texture_map[el.name] = self.sprite_factory.from_color(
                             to_rgb(*el.color),
                             (self.BLOCK_SIZE, self.BLOCK_SIZE)
                         )
+        
+
+    def loop(self):
 
         last_tick = timer.SDL_GetTicks()
         avg_time = 0
@@ -85,7 +91,7 @@ class PyCraft():
             now = timer.SDL_GetTicks()
             if now - last_tick > 1000:
                 last_tick = now
-                print(avg_time)
+                print(int(avg_time))
 
             avg_time = 0.75 * avg_time + 0.25 * (now - start)
 
