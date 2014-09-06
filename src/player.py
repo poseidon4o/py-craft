@@ -1,51 +1,144 @@
-from collections import defaultdict
+from collections import OrderedDict
 
 from .world.world import World
-from sdl2 import timer
-from .utils import Coord, signof, ceil_abs, point_in_rect
+import sdl2
+from .utils import Coord, signof, ceil_abs, point_in_rect, Drawable, UiHelper,\
+                   to_rgb
 
 
-class Player:
+class InventoryItem(Drawable):
+
+    def __init__(self, world_object):
+        super().__init__(world_object.sprite)
+        self.qty = 1
+    
+    def draw(self, surface, x, y):
+        super().draw(surface, x, y)
+
+        qty_texture = UiHelper.sprite_factory.from_text(
+            str(self.qty), fontmanager=UiHelper.font_manager
+        )
+
+        super().draw(surface, x, y, sprite=qty_texture)
+
+
+class Inventory(Drawable):
+
+    def __init__(self):
+        super().__init__(None)
+        self.padding = 5
+        self.size = UiHelper.BLOCK_SIZE
+        self.height = self.size + self.padding * 2
+
+        self.selected_index = None
+        self.selection_sprite = UiHelper.sprite_factory.from_color(
+            to_rgb(255, 0, 0),
+            (self.height, self.height)
+        )
+
+        self.width = 0
+        self.slots = OrderedDict()
+        self.last_pos = [
+            0, 0, 0
+        ]
+
+    def __getitem__(self, name):
+        if name in self.slots:
+            return self.slots[name]
+        else:
+            None
+
+    def action(self, x, y):
+        if point_in_rect((x, y), (
+                    self.last_pos[0], self.last_pos[1],
+                    self.last_pos[0] + self.last_pos[2],
+                    self.last_pos[1] + self.height
+                )
+            ):
+            self.selected_index = (x - self.last_pos[0]) // self.height
+            self.dirty = True
+
+
+    def selected(self):
+        if self.selected_index is not None:
+            return list(self.slots.keys())[self.selected_index]
+        else:
+            return None
+
+        
+    def add(self, world_object):
+        self.dirty = True
+        if world_object.name in self.slots:
+            self.slots[world_object.name].qty += 1
+        else:
+            self.slots[world_object.name] = InventoryItem(world_object)
+
+    def remove(self, name):
+        self.dirty = True
+        self.slots[name].qty -= 1
+        if self.slots[name].qty == 0:
+            del self.slots[name]
+            self.selected_index = None
+
+    def update(self):
+        if len(self.slots) == 0:
+            self.width = 0
+            return False
+
+        if self.dirty:
+            self.width = len(self.slots) * self.size +\
+                (len(self.slots) + 1) * self.padding
+            del self.sprite
+            self.sprite = UiHelper.sprite_factory.from_color(
+                to_rgb(0, 0, 0),
+                (self.width, self.height)
+            )
+        self.dirty = False
+        return True
+
+    def draw(self, surface, x, y):
+        if not self.update():
+            return
+
+        self.last_pos = [x, y, self.width]
+
+        super().draw(surface, x, y)
+        y += self.padding
+        for index, item in enumerate(self.slots.values()):
+            if self.selected_index == index:
+                super().draw(
+                    surface, x, y - self.padding, sprite=self.selection_sprite
+                )
+            x += self.padding
+            item.draw(surface, x, y)
+            x += self.size
+
+
+class Player(Drawable):
 
     def __init__(self, world, sprite):
-        self.inventory = {
-            'ground': 0
-        }
+        super().__init__(sprite)
+
 
         self.position = Coord()
 
-        self.dirty = True
-        self.dirty_rect = (0, 0, 0, 0)
-
-        self.sprite = sprite
         self.size = Coord(1, 2)
-        self.range = Coord(2, 2)
+
+        self.inventory = Inventory()
+        self.range = Coord(3, 3)
 
         self.auto_jump = False
         self.speed = 1
         self.velocity = Coord(0, self.speed)
 
         self.world = world
-        self.last_tick = timer.SDL_GetTicks()
+        self.last_tick = sdl2.timer.SDL_GetTicks()
 
-        self.reposition()
-        self.inventory_string = ''
-        self.update_inventory_string()
-
-    def update_inventory_string(self):
-        new_str = ''.join(
-            [str(key) + ':' + str(value) + ' '
-             for key, value in self.inventory.items()]
-        )
-        
-        if new_str != self.inventory_string:
-            self.inventory_string = new_str
-            self.dirty = True
-
-    # position self at center of the world
-    def reposition(self):
-        self.position.pos = [self.world.width / 2, 10]
+        self.position.pos = [self.world.width // 2, 0]
         self.tick()
+
+    def check_dirty(self):
+        self.dirty = self.dirty or self.inventory.dirty
 
     def under_me(self, x, y):
         return point_in_rect(
@@ -73,15 +166,13 @@ class Player:
         if not self.in_range(x, y):
             return
 
-
         if self.world[x][y].solid:
             self.world.dig(x, y)
         else:
-            if self.inventory['ground'] > 0:
-                self.inventory['ground'] -= 1
+            if self.inventory.selected():
+                self.inventory.remove(self.inventory.selected())
                 self.world.build(x, y)
 
-        self.update_inventory_string()
         self.dirty = True
         self.world[x][y].dirty = True
 
@@ -93,13 +184,13 @@ class Player:
                 pick = self.world.pick(x, y)
                 self.world[x][y].dirty = True
                 if pick:
-                    self.inventory[pick] += 1
-                    self.update_inventory_string()
+                    self.inventory.add(pick)
 
     def tick(self):
         self.pick()
+        self.inventory.update()
 
-        now = timer.SDL_GetTicks()
+        now = sdl2.timer.SDL_GetTicks()
         if now - self.last_tick <= 33:
             return
         self.last_tick = now
@@ -162,6 +253,8 @@ class Player:
                                               max(prev_pos.y, self.position.y)
                                               + self.size.y):
                     self.world[x][y].dirty = True
+        
+        self.check_dirty()
 
     def jump(self):
         # no air jumping

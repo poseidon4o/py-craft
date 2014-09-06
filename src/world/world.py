@@ -1,32 +1,30 @@
 from os import path
 import json
 import random
-from ..utils import ilist, ceil_abs
+from ..utils import ilist, ceil_abs, Drawable, UiHelper
 
 
-class WorldObject:
-    type = None
+class WorldObject(Drawable):
 
     @classmethod
     def init(cls, resource_path):
         objects_file = open(path.join(resource_path, 'world_types.json'))
-        cls._type = dict()
+        cls.data = dict()
 
         for item in json.loads(objects_file.read()):
-            cls._type[item['name']] = item
+            cls.data[item['name']] = item
 
         objects_file.close()
 
     def __init__(self, object_type):
-        if WorldObject._type is None:
+        if WorldObject.data is None:
             raise RuntimeError('WorldObject not init')
 
-        for key in WorldObject._type[object_type].keys():
-            setattr(self, key, WorldObject._type[object_type][key])
+        super().__init__(None)
+        for key in WorldObject.data[object_type].keys():
+            setattr(self, key, WorldObject.data[object_type][key])
 
-        self.dirty = True
         self.pickable = False
-        self._unique_id = random.random()
 
     def __eq__(self, other):
         return self.name == other.name
@@ -73,18 +71,24 @@ class World:
 
         if self._world[x][y].health == 0:
             drop = self._world[x][y].name
+            drop_sprite = self._world[x][y].sprite
+
             self._world[x][y] = WorldObject('air')
+            self._world[x][y].sprite = UiHelper.texture_map['air']
             self._world[x][y].pickable = True
             self._world[x][y].drop = drop
+            self._world[x][y].drop_sprite = drop_sprite
 
     def pick(self, x, y):
         if not self._world[x][y].pickable:
             return None
 
-        name = self._world[x][y].drop
+        picked = WorldObject(self._world[x][y].drop)
+        picked.sprite = self._world[x][y].drop_sprite
+
         self._world[x][y].pickable = False
         self._world[x][y].drop = None
-        return name
+        return picked
 
     def pointed_range(self, low, high, dimention='width'):
         indecies = range(

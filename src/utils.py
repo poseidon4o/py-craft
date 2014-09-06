@@ -1,5 +1,33 @@
 import math
 
+import sdl2
+import sdl2.ext.sprite
+
+import src.utils
+
+
+class UiHelper:
+    pass
+
+
+class Drawable:
+    def __init__(self, sprite):
+        self.dirty = True
+        self.dirty_rect = (0, 0, 0, 0)
+        self.sprite = sprite
+
+
+    def draw(self, surface, x, y, sprite=None):
+        sprite = sprite or self.sprite
+        draw_rect = sdl2.rect.SDL_Rect(x, y, 0, 0)
+
+        sdl2.surface.SDL_BlitSurface(
+            sprite.surface, None,
+            surface, draw_rect
+        )
+
+        self.dirty = False
+
 
 class Coord:
 

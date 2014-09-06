@@ -4,7 +4,7 @@ from os import path
 import sdl2.ext
 from sdl2 import timer, surface, video, rect
 
-from .utils import bind_in_range, Coord, point_in_rect, to_rgb
+from .utils import bind_in_range, Coord, point_in_rect, to_rgb, UiHelper
 from .world.world_generator import WorldGenerator
 from .world.world import WorldObject
 from .player import Player
@@ -36,18 +36,19 @@ class PyCraft():
         self.p_surface = self.window.get_surface()
         self.c_surface = video.SDL_GetWindowSurface(self.window.window)
 
-        self.font_manager = sdl2.ext.FontManager(
-            self.RESOURCES.get_path('helvetica.ttf')
+        UiHelper.font_manager = self.font_manager = sdl2.ext.FontManager(
+            self.RESOURCES.get_path('helvetica-neue-bold.ttf')
         )
-        self.sprite_factory = sdl2.ext.SpriteFactory(sdl2.ext.SOFTWARE)
-        self.sprite_renderer = self.sprite_factory\
-                                   .create_sprite_render_system(self.window)
+        UiHelper.sprite_factory = self.sprite_factory =\
+            sdl2.ext.SpriteFactory(sdl2.ext.SOFTWARE)
+
+        UiHelper.BLOCK_SIZE = self.BLOCK_SIZE
 
         self.offset = Coord(0, 0)  # offset in world coordinates
         self.world = WorldGenerator.generate_world(None, (100, 100))
 
         self.dirty = True
-        self.texture_map = {}
+        UiHelper.texture_map = {}
         
         sprite = self.sprite_factory.from_image(
             self.RESOURCES.get_path('player.png')
@@ -58,20 +59,22 @@ class PyCraft():
         self.loop()
 
     def init(self):
-
         for row in self.world:
             for el in row:
-                if el.name not in self.texture_map:
+                if el.name not in UiHelper.texture_map:
                     if 'image' in el.__dict__:
-                        self.texture_map[el.name] = self.sprite_factory.from_image(
-                            self.RESOURCES.get_path(el.image)
-                        )
+                        el.sprite = UiHelper.texture_map[el.name] =\
+                            self.sprite_factory.from_image(
+                                self.RESOURCES.get_path(el.image)
+                            )
                     else:
-                        self.texture_map[el.name] = self.sprite_factory.from_color(
-                            to_rgb(*el.color),
-                            (self.BLOCK_SIZE, self.BLOCK_SIZE)
-                        )
-        
+                        el.sprite = UiHelper.texture_map[el.name] =\
+                            self.sprite_factory.from_color(
+                                to_rgb(*el.color),
+                                (self.BLOCK_SIZE, self.BLOCK_SIZE)
+                            )
+                else:
+                    el.sprite = UiHelper.texture_map[el.name]
 
     def loop(self):
 
@@ -139,7 +142,7 @@ class PyCraft():
                 draw_rect.y = h * self.BLOCK_SIZE
 
                 sdl2.surface.SDL_BlitSurface(
-                    self.texture_map[self.world[x][y].name].surface,
+                    UiHelper.texture_map[self.world[x][y].name].surface,
                     None, self.c_surface, draw_rect
                 )
 
@@ -148,7 +151,7 @@ class PyCraft():
                     draw_rect.y += self.BLOCK_SIZE // 5
 
                     sdl2.surface.SDL_BlitSurface(
-                        self.texture_map[self.world[x][y].drop].surface,
+                        UiHelper.texture_map[self.world[x][y].drop].surface,
                         rect.SDL_Rect(
                             0, 0,
                             self.BLOCK_SIZE // 2, self.BLOCK_SIZE // 2
@@ -169,42 +172,37 @@ class PyCraft():
             return
 
         self.update_screen()
-
-        if self.player.dirty or self.dirty:
-            self.draw_player()
+        self.draw_player()
 
         self.dirty = False
 
     def draw_player(self):
-        self.player.dirty = False
         screen_pos = list(
             map(int, self.world_to_screen(*self.player.position.pos))
         )
 
-        draw_rect = rect.SDL_Rect(
-            screen_pos[0], screen_pos[1],
-            self.BLOCK_SIZE, self.BLOCK_SIZE
+        self.player.draw(self.c_surface, *screen_pos)
+
+        self.player.inventory.update()
+        screen_pos = (
+            self.WIDTH // 2 - self.player.inventory.width // 2,
+            0
         )
 
-        sdl2.surface.SDL_BlitSurface(
-            self.player.sprite.surface, None,
-            self.c_surface, draw_rect
-        )
+        self.player.inventory.draw(self.c_surface, *screen_pos)
+        if self.player.inventory.width == 0:
+            from_pos = list(self.screen_to_world(*screen_pos))
+            from_pos[0] -= 2
+            to_pos = list(self.screen_to_world(
+                screen_pos[0] + self.player.inventory.width,
+                self.player.inventory.height
+            ))
+            to_pos[0] += 1
+            for x in self.world.in_width(from_pos[0], to_pos[0]):
+                for y in self.world.in_height(from_pos[1], to_pos[1]):
+                    self.world[x][y].dirty = True
 
-        draw_rect.x = draw_rect.y = 0
 
-        inventory_texture = self.sprite_factory.from_text(
-            self.player.inventory_string,
-            fontmanager=self.font_manager
-        )
-
-        for x in self.world.in_width(self.offset.x, self.offset.x + inventory_texture.size[0] // self.BLOCK_SIZE + 1):
-            self.world[x][self.offset.y].dirty = True
-
-        sdl2.surface.SDL_BlitSurface(
-            inventory_texture.surface, None,
-            self.c_surface, draw_rect
-        )
 
     def focus_player(self):
         no_move_rect = (
@@ -240,3 +238,8 @@ class PyCraft():
             elif event.type == sdl2.SDL_MOUSEBUTTONDOWN:
                 x, y = self.screen_to_world(event.button.x, event.button.y)
                 self.player.action(x, y)
+                self.player.inventory.action(
+                    event.button.x,
+                    event.button.y
+                )
+                self.player.check_dirty()
