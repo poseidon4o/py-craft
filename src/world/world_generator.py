@@ -16,6 +16,7 @@ class WorldGenerator:
     chance_for_mountain = 0.1
 
     chance_for_cave = 0.05
+    chance_for_rocks = 0.3
     cave_length = 20
 
     max_inclination = 2
@@ -33,8 +34,19 @@ class WorldGenerator:
         self._indestructible()
         return self.world
 
+    def _rocks_at(self, width, height):
+        for w in self.world.in_width(width, width + randint(2, 5)):
+            size = randint(2, 5)
+            for h in self.world.in_height(height, height + size):
+                if self.world[w][h].solid:
+                    self.world[w][h] = WorldObject('rock')
+
     def _rocks(self):
-        pass
+        for width in self.world.in_width():
+            if random_chance(self.chance_for_rocks):
+                height = self.__ground_height(width)
+                height = randint(height, self.world.height)
+                self._rocks_at(width, height)
 
     def _hole_at(self, width, height):
         for w in self.world.in_width(width - self.max_inclination,

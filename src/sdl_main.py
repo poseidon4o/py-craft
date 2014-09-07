@@ -192,14 +192,16 @@ class PyCraft():
 
         self.player.draw(self.c_surface, *screen_pos)
 
+        was_dirty = self.player.inventory.dirty
         self.player.inventory.update()
+        was_dirty = was_dirty or self.player.inventory.dirty
         screen_pos = (
             self.WIDTH // 2 - self.player.inventory.width // 2,
             0
         )
 
         self.player.inventory.draw(self.c_surface, *screen_pos)
-        if self.player.inventory.width == 0:
+        if was_dirty:
             from_pos = list(self.screen_to_world(*screen_pos))
             from_pos[0] -= 2
             to_pos = list(self.screen_to_world(

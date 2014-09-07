@@ -168,9 +168,10 @@ class Player(Drawable):
         if self.world[x][y].solid:
             self.world.dig(x, y)
         else:
-            if self.inventory.selected():
-                self.inventory.remove(self.inventory.selected())
-                self.world.build(x, y, self.inventory.selected())
+            selection = self.inventory.selected()
+            if selection:
+                self.inventory.remove(selection)
+                self.world.build(x, y, selection)
 
         self.dirty = True
         self.world[x][y].dirty = True

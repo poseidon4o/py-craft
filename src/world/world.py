@@ -70,7 +70,9 @@ class World:
         return x >= 0 and x < self.width and y >= 0 and y < self.height
 
     def build(self, x, y, name):
-        self._world[x][y] = WorldObject('ground')
+        self._world[x][y] = WorldObject(name)
+        self._world[x][y].sprite =\
+            UiHelper.texture_map[self._world[x][y].get_key()]
 
     def dig(self, x, y):
         if not self._world[x][y].solid:
@@ -118,7 +120,9 @@ class World:
     def tick(self):
         for w in self.in_width():
             for h in self.in_height(0, self.height - 1):
-                if self._world[w][h].solid and not self._world[w][h-1].solid:
+                if self._world[w][h].solid and not self._world[w][h-1].solid\
+                        and self._world[w][h].has_prop('images'):
+    
                     self._world[w][h].image = self._world[w][h].images[1]
                     self._world[w][h].sprite =\
                         UiHelper.texture_map[self._world[w][h].get_key()]
