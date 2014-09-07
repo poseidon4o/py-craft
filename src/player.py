@@ -3,7 +3,7 @@ from collections import OrderedDict
 from .world.world import World
 import sdl2
 from .utils import Coord, signof, ceil_abs, point_in_rect, Drawable, UiHelper,\
-                   to_rgb
+    to_rgb
 
 
 class InventoryItem(Drawable):
@@ -15,7 +15,7 @@ class InventoryItem(Drawable):
             sprite = world_object.sprite
         super().__init__(sprite)
         self.qty = 1
-    
+
     def draw(self, surface, x, y):
         super().draw(surface, x, y)
 
@@ -53,15 +53,12 @@ class Inventory(Drawable):
             None
 
     def action(self, x, y):
-        if point_in_rect((x, y), (
-                    self.last_pos[0], self.last_pos[1],
-                    self.last_pos[0] + self.last_pos[2],
-                    self.last_pos[1] + self.height
-                )
-            ):
+        if point_in_rect((x, y),
+                         (self.last_pos[0], self.last_pos[1],
+                          self.last_pos[0] + self.last_pos[2],
+                          self.last_pos[1] + self.height)):
             self.selected_index = (x - self.last_pos[0]) // self.height
             self.dirty = True
-
 
     def selected(self):
         if self.selected_index is not None:
@@ -69,7 +66,6 @@ class Inventory(Drawable):
         else:
             return None
 
-        
     def add(self, world_object):
         self.dirty = True
         if world_object.name in self.slots:
@@ -122,7 +118,6 @@ class Player(Drawable):
 
     def __init__(self, world, sprite):
         super().__init__(sprite)
-
 
         self.position = Coord()
 
@@ -257,7 +252,7 @@ class Player(Drawable):
                                               max(prev_pos.y, self.position.y)
                                               + self.size.y):
                     self.world[x][y].dirty = True
-        
+
         self.check_dirty()
 
     def jump(self):

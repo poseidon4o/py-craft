@@ -49,7 +49,7 @@ class PyCraft():
 
         self.dirty = True
         UiHelper.texture_map = {}
-        
+
         sprite = self.sprite_factory.from_image(
             self.RESOURCES.get_path('player.png')
         )
@@ -210,8 +210,6 @@ class PyCraft():
             for x in self.world.in_width(from_pos[0], to_pos[0]):
                 for y in self.world.in_height(from_pos[1], to_pos[1]):
                     self.world[x][y].dirty = True
-
-
 
     def focus_player(self):
         no_move_rect = (

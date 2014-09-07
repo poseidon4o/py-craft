@@ -16,7 +16,6 @@ class Drawable:
         self.dirty_rect = (0, 0, 0, 0)
         self.sprite = sprite
 
-
     def draw(self, surface, x, y, sprite=None):
         sprite = sprite or self.sprite
         draw_rect = sdl2.rect.SDL_Rect(x, y, 0, 0)

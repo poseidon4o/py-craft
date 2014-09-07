@@ -24,7 +24,7 @@ class WorldObject(Drawable):
         for key in WorldObject.data[object_type].keys():
             setattr(self, key, WorldObject.data[object_type][key])
             if key == 'image' and self.image == ''\
-                and 'images' in WorldObject.data[object_type]:
+                    and 'images' in WorldObject.data[object_type]:
                 self.image = WorldObject.data[object_type]['images'][0]
 
         self.pickable = False
