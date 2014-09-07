@@ -23,8 +23,17 @@ class WorldObject(Drawable):
         super().__init__(None)
         for key in WorldObject.data[object_type].keys():
             setattr(self, key, WorldObject.data[object_type][key])
+            if key == 'image' and self.image == ''\
+                and 'images' in WorldObject.data[object_type]:
+                self.image = WorldObject.data[object_type]['images'][0]
 
         self.pickable = False
+
+    def has_prop(self, name):
+        return name in self.__dict__
+
+    def get_key(self):
+        return self.image if self.has_prop('image') else self.name
 
     def __eq__(self, other):
         return self.name == other.name
@@ -58,9 +67,9 @@ class World:
         return self.pointed_range(low, high, dimention)
 
     def valid(self, x, y):
-        return x >=0 and x < self.width and y >= 0 and y < self.height
+        return x >= 0 and x < self.width and y >= 0 and y < self.height
 
-    def build(self, x, y):
+    def build(self, x, y, name):
         self._world[x][y] = WorldObject('ground')
 
     def dig(self, x, y):
@@ -69,26 +78,50 @@ class World:
 
         self._world[x][y].health -= 1
 
+        if self._world[x][y].has_prop('images'):
+            self._world[x][y].sprite =\
+                UiHelper.texture_map[self._world[x][y].images[0]]
+
+        self._world[x][y].dirty = True
+
         if self._world[x][y].health == 0:
-            drop = self._world[x][y].name
-            drop_sprite = self._world[x][y].sprite
+            old = self._world[x][y]
 
             self._world[x][y] = WorldObject('air')
-            self._world[x][y].sprite = UiHelper.texture_map['air']
+            self._world[x][y].sprite =\
+                UiHelper.texture_map[self._world[x][y].get_key()]
             self._world[x][y].pickable = True
-            self._world[x][y].drop = drop
-            self._world[x][y].drop_sprite = drop_sprite
+
+            if old.has_prop('images'):
+                self._world[x][y].drop_sprite =\
+                    UiHelper.texture_map[old.images[0]]
+                self._world[x][y].drop = old.images[0]
+            else:
+                self._world[x][y].drop = old.get_key()
+                self._world[x][y].drop_sprite = old.sprite
+
+            self._world[x][y].drop_name = old.name
+
+            del old
 
     def pick(self, x, y):
         if not self._world[x][y].pickable:
             return None
 
-        picked = WorldObject(self._world[x][y].drop)
+        picked = WorldObject(self._world[x][y].drop_name)
         picked.sprite = self._world[x][y].drop_sprite
 
         self._world[x][y].pickable = False
         self._world[x][y].drop = None
         return picked
+
+    def tick(self):
+        for w in self.in_width():
+            for h in self.in_height(0, self.height - 1):
+                if self._world[w][h].solid and not self._world[w][h-1].solid:
+                    self._world[w][h].image = self._world[w][h].images[1]
+                    self._world[w][h].sprite =\
+                        UiHelper.texture_map[self._world[w][h].get_key()]
 
     def pointed_range(self, low, high, dimention='width'):
         indecies = range(

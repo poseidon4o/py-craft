@@ -10,7 +10,15 @@
         "color": [120, 60, 50],
         "health": 2,
         "solid": 1,
-        "image": "ground.png"
+        "images": ["ground.png", "grass.png"],
+        "image": "" 
+    },
+    {
+        "name": "rock",
+        "color": [170, 190, 190],
+        "health": 3,
+        "solid": 1,
+        "image": "rock.png"
     },
     {
         "name": "indestructible",

@@ -29,8 +29,12 @@ class WorldGenerator:
         self._mountains()
         self._smooth_mountains()
         self._caves()
+        self._rocks()
         self._indestructible()
         return self.world
+
+    def _rocks(self):
+        pass
 
     def _hole_at(self, width, height):
         for w in self.world.in_width(width - self.max_inclination,
@@ -72,7 +76,8 @@ class WorldGenerator:
 
     def _indestructible(self):
         for width in self.world.in_width():
-            self.world[width][self.world.height-1] = WorldObject('indestructible')
+            self.world[width][self.world.height-1] =\
+                WorldObject('indestructible')
 
     def __ground_height(self, at):
         if at < 0:
@@ -81,7 +86,7 @@ class WorldGenerator:
             at = self.world.width - 1
 
         for cell in self.world.in_height():
-            if self.world[at][cell] == WorldObject('ground'):
+            if self.world[at][cell].solid:
                 return cell
         return 0
 

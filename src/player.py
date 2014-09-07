@@ -9,7 +9,11 @@ from .utils import Coord, signof, ceil_abs, point_in_rect, Drawable, UiHelper,\
 class InventoryItem(Drawable):
 
     def __init__(self, world_object):
-        super().__init__(world_object.sprite)
+        if world_object.has_prop('images'):
+            sprite = UiHelper.texture_map[world_object.images[0]]
+        else:
+            sprite = world_object.sprite
+        super().__init__(sprite)
         self.qty = 1
     
     def draw(self, surface, x, y):
@@ -171,7 +175,7 @@ class Player(Drawable):
         else:
             if self.inventory.selected():
                 self.inventory.remove(self.inventory.selected())
-                self.world.build(x, y)
+                self.world.build(x, y, self.inventory.selected())
 
         self.dirty = True
         self.world[x][y].dirty = True
@@ -262,7 +266,7 @@ class Player(Drawable):
                 .solid:
             return
 
-        self.velocity.y -= self.speed * 4
+        self.velocity.y -= self.speed * 3
 
     def move(self, direction):
         self.velocity.x += direction * self.speed

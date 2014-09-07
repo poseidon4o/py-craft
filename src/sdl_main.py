@@ -56,25 +56,33 @@ class PyCraft():
         self.player = Player(self.world, sprite)
 
         self.init()
+        self.world.tick()
         self.loop()
 
     def init(self):
         for row in self.world:
             for el in row:
-                if el.name not in UiHelper.texture_map:
-                    if 'image' in el.__dict__:
-                        el.sprite = UiHelper.texture_map[el.name] =\
+                key = el.get_key()
+                if key not in UiHelper.texture_map:
+                    if el.has_prop('image'):
+                        el.sprite = UiHelper.texture_map[key] =\
                             self.sprite_factory.from_image(
                                 self.RESOURCES.get_path(el.image)
                             )
                     else:
-                        el.sprite = UiHelper.texture_map[el.name] =\
+                        el.sprite = UiHelper.texture_map[key] =\
                             self.sprite_factory.from_color(
                                 to_rgb(*el.color),
                                 (self.BLOCK_SIZE, self.BLOCK_SIZE)
                             )
+                    if el.has_prop('images'):
+                        for img in el.images:
+                            UiHelper.texture_map[img] =\
+                                self.sprite_factory.from_image(
+                                    self.RESOURCES.get_path(img)
+                                )
                 else:
-                    el.sprite = UiHelper.texture_map[el.name]
+                    el.sprite = UiHelper.texture_map[key]
 
     def loop(self):
 
@@ -87,6 +95,7 @@ class PyCraft():
                 return
 
             self.player.tick()
+            # self.world.tick() # optimize to be called on every frame
             self.focus_player()
             self.draw()
             self.window.refresh()
@@ -142,7 +151,7 @@ class PyCraft():
                 draw_rect.y = h * self.BLOCK_SIZE
 
                 sdl2.surface.SDL_BlitSurface(
-                    UiHelper.texture_map[self.world[x][y].name].surface,
+                    self.world[x][y].sprite.surface,
                     None, self.c_surface, draw_rect
                 )
 
@@ -151,7 +160,7 @@ class PyCraft():
                     draw_rect.y += self.BLOCK_SIZE // 5
 
                     sdl2.surface.SDL_BlitSurface(
-                        UiHelper.texture_map[self.world[x][y].drop].surface,
+                        self.world[x][y].drop_sprite.surface,
                         rect.SDL_Rect(
                             0, 0,
                             self.BLOCK_SIZE // 2, self.BLOCK_SIZE // 2
