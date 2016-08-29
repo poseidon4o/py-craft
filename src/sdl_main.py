@@ -1,5 +1,5 @@
 import sys
-from os import path
+from os import path, name as OS_NAME
 
 import sdl2.ext
 from sdl2 import timer, surface, video, rect
@@ -36,9 +36,11 @@ class PyCraft():
         self.p_surface = self.window.get_surface()
         self.c_surface = video.SDL_GetWindowSurface(self.window.window)
 
-        UiHelper.font_manager = self.font_manager = sdl2.ext.FontManager(
-            self.RESOURCES.get_path('helvetica-neue-bold.ttf')
-        )
+        if OS_NAME == 'unix':
+            UiHelper.font_manager = self.font_manager = sdl2.ext.FontManager(
+                self.RESOURCES.get_path('helvetica-neue-bold.ttf')
+            )
+
         UiHelper.sprite_factory = self.sprite_factory =\
             sdl2.ext.SpriteFactory(sdl2.ext.SOFTWARE)
 
