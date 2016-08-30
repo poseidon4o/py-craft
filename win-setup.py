@@ -11,6 +11,7 @@ if len(sys.argv) == 2:
 
 SDL_RUNTIME = "https://www.libsdl.org/release/SDL2-2.0.4-win32-x86.zip"
 SDL_IMAGE_RUNTIME = "https://www.libsdl.org/projects/SDL_image/release/SDL2_image-2.0.1-win32-x86.zip"
+SDL_TTF = "https://www.libsdl.org/projects/SDL_ttf/release/SDL2_ttf-2.0.14-win32-x86.zip"
 PY_SDL = 'https://bitbucket.org/marcusva/py-sdl2/downloads/PySDL2-0.9.4.zip'
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -113,10 +114,12 @@ if __name__ == '__main__':
 	sdl_zip = download(SDL_RUNTIME, "sdl2.zip")
 	sdl_image_zip = download(SDL_IMAGE_RUNTIME, "sdl2_image.zip")
 	py_sdl_zip = download(PY_SDL, "py_sdl.zip")
+	sdl_ttf_zip = download(SDL_TTF, "sdl_ttf.zip")
+
 	extract(sdl_zip, RUNTIME_DIR)
 	extract(sdl_image_zip, RUNTIME_DIR)
+	extract(sdl_ttf_zip, RUNTIME_DIR)
 	extract(py_sdl_zip, PY_SDL_DIR)
-
 
 	run_cmd(['make.bat'])
 

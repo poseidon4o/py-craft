@@ -36,10 +36,9 @@ class PyCraft():
         self.p_surface = self.window.get_surface()
         self.c_surface = video.SDL_GetWindowSurface(self.window.window)
 
-        if OS_NAME == 'unix':
-            UiHelper.font_manager = self.font_manager = sdl2.ext.FontManager(
-                self.RESOURCES.get_path('helvetica-neue-bold.ttf')
-            )
+        UiHelper.font_manager = self.font_manager = sdl2.ext.FontManager(
+            self.RESOURCES.get_path('helvetica-neue-bold.ttf')
+        )
 
         UiHelper.sprite_factory = self.sprite_factory =\
             sdl2.ext.SpriteFactory(sdl2.ext.SOFTWARE)
