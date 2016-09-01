@@ -18,10 +18,15 @@ SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 SETUP_DIR = os.path.join(SCRIPT_DIR, 'build')
 RUNTIME_DIR = os.path.join(SETUP_DIR, "runtime")
 PY_SDL_DIR = os.path.join(SETUP_DIR, "pysdl2")
+TMP_DIR = os.path.join(SETUP_DIR, "tmp")
 
 print("Creating [{}] for working dir.".format(SETUP_DIR))
 if not os.path.exists(SETUP_DIR):
 	os.makedirs(SETUP_DIR)
+
+print("Creating [{}] for tmp dir.".format(TMP_DIR))
+if not os.path.exists(TMP_DIR):
+	os.makedirs(TMP_DIR)
 
 print("Creating [{}] for runtime dir.".format(RUNTIME_DIR))
 if not os.path.exists(RUNTIME_DIR):
@@ -37,6 +42,9 @@ os.environ['PYTHON'] = sys.executable
 
 last = time.time()
 def download(url, name):
+	cwd = os.getcwd()
+	os.chdir(TMP_DIR)
+	name = os.path.join(TMP_DIR, name)
 	proxies = {
 		'http': 'http://10.0.0.1:1234',
 		'https': 'https://10.0.0.1:1234',
@@ -59,7 +67,8 @@ def download(url, name):
 			print("{}% ".format(int(got_pc)))
 	path, headers = dl.urlretrieve(url, name, reporthook=rep)
 	print("Downloaded to [{}]".format(path))
-	return path
+	os.chdir(cwd)
+	return os.path.join(TMP_DIR, path)
 
 def extract(zip_path, dest):
 	print("Extracting [{}] to [{}]".format(zip_path, dest))
@@ -72,7 +81,7 @@ def extract(zip_path, dest):
 
 def run_cmd(cmd, wd=None):
 	print(cmd)
-	pwd = os.getcwd()
+	cwd = os.getcwd()
 	if not wd:
 		wd = os.path.join(PY_SDL_DIR, 'PySDL2-0.9.4')
 	os.chdir(wd)
@@ -91,7 +100,7 @@ def run_cmd(cmd, wd=None):
 		code = proc.returncode
 	res = res.decode().strip(" \n\r\t")
 
-	os.chdir(pwd)
+	os.chdir(cwd)
 
 	print("OUTPUT:\n{}\n\nCODE:{}".format(res, code))
 
